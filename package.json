@@ -26,12 +26,11 @@
   "dependencies": {
     "hemera-plugin": "0.0.17",
     "hemera-store": "^1.1.14",
-    "joi": "^13.0.2",
-    "neo4j-driver": "^1.5.0"
+    "joi": "^13.0.2"
   },
   "devDependencies": {
     "@types/code": "^4.0.3",
-    "@types/node": "^8.0.53",
+    "@types/node": "^8.0.54",
     "@types/should": "^11.2.0",
     "code": "^5.1.2",
     "hemera-joi": "^2.0.1",
@@ -40,7 +39,7 @@
     "mocha-typescript": "^1.1.12",
     "nats": "^0.7.24",
     "nats-hemera": "^2.4.3",
-    "neo4j-driver": "^1.5.0",
+    "neo4j-driver": "^1.5.1",
     "should": "^13.1.3"
   }
 }

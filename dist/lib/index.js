@@ -6,6 +6,7 @@ const Neo4J = Neo4JLib.v1;
 const store_1 = require("./store");
 const pattern_1 = require("./pattern");
 const model_1 = require("./model");
+const query_helper_1 = require("./query-helper");
 const integer = require("neo4j-driver/lib/v1/integer");
 exports.HemeraNeo4JStore = {};
 exports.HemeraNeo4JStore.plugin = Hp(function hemeraNeo4JStore(hemera, options, done) {
@@ -15,6 +16,7 @@ exports.HemeraNeo4JStore.plugin = Hp(function hemeraNeo4JStore(hemera, options, 
     hemera.decorate('neo4j', store_1.Neo4JStore);
     hemera.decorate('neo4j-node-model', model_1.Neo4JNodeModel);
     hemera.decorate('neo4j-rel-model', model_1.Neo4JRelationModel);
+    hemera.decorate('neo4j-cypher-helper', query_helper_1.CypherQueryHelper);
     hemera.decorate('neo4j-integer', integer);
     hemera.add(pattern_1.Neo4JStorePattern.create(topic), function (req, cb) {
         const store = new store_1.Neo4JStore(CNeo4jDriver);

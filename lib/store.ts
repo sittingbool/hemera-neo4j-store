@@ -7,6 +7,7 @@ const integer = require("neo4j-driver/lib/v1/integer");
 
 import * as Joi from 'joi';
 import {IDScheme, RelatedNodeScheme} from "./pattern";
+import {CypherQueryHelper} from "./query-helper";
 //----------------------------------------------------------------------------------------------------------
 
 
@@ -70,257 +71,6 @@ export class Neo4JStore extends Store
     //------------------------------------------------------------------------------------------------------
     {
         super(driver, {});
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected startStatementForId(id: any, queryVar: string = 'n')
-    //------------------------------------------------------------------------------------------------------
-    {
-        if ( typeof id === 'object' ) {
-            id = integer.int(id.low, id.high);
-        }
-
-        if ( Neo4J.isInt(id) ) {
-            id = Neo4J.integer.toString(id);
-        }
-
-        return `START ${queryVar}=node(${id})`;
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected startStatementForRelId(id: any, queryVar: string = 'r')
-    //------------------------------------------------------------------------------------------------------
-    {
-        if ( typeof id === 'object' ) {
-            id = integer.int(id.low, id.high);
-        }
-
-        if ( Neo4J.isInt(id) ) {
-            id = Neo4J.integer.toString(id);
-        }
-
-        return `START ${queryVar}=rel(${id})`;
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected whereStatementForId(id: any, queryVar: string = 'n')
-    //------------------------------------------------------------------------------------------------------
-    {
-        if ( typeof id === 'object' ) {
-            id = integer.int(id.low, id.high);
-        }
-
-        if ( Neo4J.isInt(id) ) {
-            id = Neo4J.integer.toString(id);
-        }
-
-        return `WHERE id(${queryVar}) = ${id}`;
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected matchStatement(matches: string[], queryVars?: string[])
-    //------------------------------------------------------------------------------------------------------
-    {
-        let matchString = '', i, current, queryVar = '';
-
-        if (matches.length < 1) {
-            return '';
-        }
-
-        for( i = 0; i < matches.length; i++ ) {
-            current = matches[i];
-            if (queryVars && Array.isArray(queryVars)) {
-                queryVar = queryVars[i] || 'n';
-            }
-
-            matchString += '(' + queryVar + current + '), ';
-        }
-
-        let index = matchString.lastIndexOf(', ');
-
-        if ( index < 0 ) {
-            index = 0;
-        }
-
-        matchString = matchString.substring(0 , index);
-
-        return `MATCH ${matchString}`;
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected generateLabelQueryString(labels: string[]): string
-    //------------------------------------------------------------------------------------------------------
-    {
-        return ':' + labels.join(':');
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected generatePropertiesQueryString(data: Object): string
-    //------------------------------------------------------------------------------------------------------
-    {
-        let dataString = '{ ', keys: string[];
-
-        keys = Object.keys(data);
-
-        if ( keys.length < 1 ) {
-            return '';
-        }
-
-        keys.forEach(key => {
-            dataString += key + ' : {' + key + '}, ';
-        });
-
-        let index = dataString.lastIndexOf(', ');
-
-        if ( index < 0 ) {
-            index = 0;
-        }
-
-        dataString = dataString.substring(0 , index) + ' }';
-
-        return dataString;
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected generatePropertiesMatchString(data: Object): string
-    //------------------------------------------------------------------------------------------------------
-    {
-        let dataString = '{ ', keys: string[];
-
-        keys = Object.keys(data);
-
-        if ( keys.length < 1 ) {
-            return '{}';
-        }
-
-        keys.forEach(key => {
-            dataString += key + ': ' + JSON.stringify(data[key]) + ', ';
-        });
-
-        let index = dataString.lastIndexOf(', ');
-
-        if ( index < 0 ) {
-            index = 0;
-        }
-
-        dataString = dataString.substring(0 , index) + ' }';
-
-        return dataString;
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected generateSortString(sortData: string | string[] | ISortRule | ISortRule[],
-                                 queryVar: string = 'n', addSortCmd: boolean = true): string
-    //------------------------------------------------------------------------------------------------------
-    {
-        let result = '', i, sortRule: ISortRule, index;
-
-        if ( !sortData ) {
-            return result;
-        }
-
-        if ( addSortCmd ) {
-            result += ' ORDER BY'
-        }
-
-        switch (typeof sortData) {
-            case 'string':
-                result += ' ' + queryVar + '.' + sortData;
-                break;
-
-            case 'object':
-                if ( Array.isArray(sortData) ) {
-                    for( i = 0; i < sortData.length; i++ ) {
-                        result += this.generateSortString(sortData[i], queryVar, false) + ', ';
-                    }
-
-                    index = result.lastIndexOf(', ');
-
-                    if ( index < 0 ) {
-                        index = 0;
-                    }
-
-                    result = result.substring(0 , index);
-
-                    return result;
-                }
-
-                sortRule = (<ISortRule>sortData);
-                result += ' ' + queryVar + '.' + sortRule.property;
-
-                if ( sortRule.desc === true ) {
-                    result += ' DESC';
-                }
-                break;
-
-            default:
-                return '';
-        }
-
-        return result;
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected generateOptionsString(options: IListOptionsRule, queryVar = 'n'): string
-    //------------------------------------------------------------------------------------------------------
-    {
-        let result = '';
-
-        if ( !options || typeof options !== "object" || Object.keys(options).length < 1 ) {
-            return result;
-        }
-
-        if ( options.orderBy ) {
-            result += this.generateSortString(options.orderBy, queryVar);
-        }
-
-        if ( options.offset && typeof options.offset === "number" && options.offset > 0 ) {
-            result += ' SKIP ' + options.offset;
-        }
-
-        if ( options.limit && typeof options.limit === "number" && options.limit > -1 ) {
-            result += ' LIMIT ' + options.limit;
-        }
-
-        return result;
-    }
-
-
-    //------------------------------------------------------------------------------------------------------
-    protected makeStatementForRelationMatch(matchQuery: string, relationStatement: string,
-                                            optionalMatch:boolean = true): string
-    //------------------------------------------------------------------------------------------------------
-    {
-        let whereQuery: string, whereQueryIndex;
-
-        if (matchQuery && typeof matchQuery === "string" && matchQuery.length) {
-            if (optionalMatch) {
-                return `${matchQuery} OPTIONAL MATCH ${relationStatement}`;
-            }
-
-            // where must be after match
-            whereQuery = '';
-            whereQueryIndex = matchQuery.indexOf(' WHERE');
-
-            if (whereQueryIndex > -1) {
-                whereQuery = matchQuery.substr(whereQueryIndex);
-                matchQuery = matchQuery.substring(0, whereQueryIndex);
-            }
-
-            return `${matchQuery}, ${relationStatement}${whereQuery}`;
-        }
-
-        //  if no nodes are matched the relationship match becomes mandatory
-        return `MATCH ${relationStatement}`;
     }
 
 
@@ -405,9 +155,9 @@ export class Neo4JStore extends Store
             labels = ['UNKNOWN'];
         }
 
-        let labelString = this.generateLabelQueryString(labels);
+        let labelString = CypherQueryHelper.generateLabelQueryString(labels);
 
-        let dataString = this.generatePropertiesQueryString(data);
+        let dataString = CypherQueryHelper.generatePropertiesQueryString(data);
 
         this.session.run(`CREATE (n${labelString} ${dataString}) RETURN n`, data)
             .subscribe({
@@ -448,11 +198,11 @@ export class Neo4JStore extends Store
         let dataString = '';
 
         if ( labels && labels.length ) {
-            labelString = this.generateLabelQueryString(labels);
+            labelString = CypherQueryHelper.generateLabelQueryString(labels);
         }
 
         if ( data && typeof data === 'object' ) {
-            dataString = ' ' + this.generatePropertiesQueryString(data);
+            dataString = ' ' + CypherQueryHelper.generatePropertiesQueryString(data);
         }
 
         let query = `MATCH (n${labelString}${dataString}) DELETE n RETURN COUNT(n) as count`;
@@ -500,7 +250,7 @@ export class Neo4JStore extends Store
         let _record = null;
         let id = req.id;
 
-        let startStatement = this.startStatementForId(id);
+        let startStatement = CypherQueryHelper.startStatementForId(id);
 
         let query = `${startStatement} DELETE n RETURN COUNT(n) as count`;
 
@@ -544,14 +294,14 @@ export class Neo4JStore extends Store
 
         let labelString = '';
         let queryString = '';
-        let dataString = ' ' + this.generatePropertiesQueryString(data);
+        let dataString = ' ' + CypherQueryHelper.generatePropertiesQueryString(data);
 
         if ( labels && labels.length ) {
-            labelString = this.generateLabelQueryString(labels);
+            labelString = CypherQueryHelper.generateLabelQueryString(labels);
         }
 
         if ( query && typeof query === 'object' ) {
-            queryString = ' ' + this.generatePropertiesMatchString(query);
+            queryString = ' ' + CypherQueryHelper.generatePropertiesMatchString(query);
         }
 
         let cypherQuery = `MATCH (n${labelString}${queryString}) SET n += ${dataString} RETURN n`;
@@ -602,10 +352,10 @@ export class Neo4JStore extends Store
         let _record = null;
         let id = req.id;
 
-        let startStatement = this.startStatementForId(id);
+        let startStatement = CypherQueryHelper.startStatementForId(id);
 
         let data = req.data || {};
-        let dataString = ' ' + this.generatePropertiesQueryString(data);
+        let dataString = ' ' + CypherQueryHelper.generatePropertiesQueryString(data);
 
         let cypherQuery = `${startStatement} SET n += ${dataString} RETURN n`;
 
@@ -655,15 +405,15 @@ export class Neo4JStore extends Store
         }
 
         if ( labels && labels.length ) {
-            labelString = this.generateLabelQueryString(labels);
+            labelString = CypherQueryHelper.generateLabelQueryString(labels);
         }
 
         if ( query && typeof query === 'object' ) {
-            queryString = ' ' + this.generatePropertiesMatchString(query);
+            queryString = ' ' + CypherQueryHelper.generatePropertiesMatchString(query);
         }
 
         if ( options ) {
-            optionsString = this.generateOptionsString(options);
+            optionsString = CypherQueryHelper.generateOptionsString(options);
         }
 
         let cypherQuery = `MATCH (n${labelString}${queryString}) RETURN n${optionsString}`;
@@ -701,7 +451,7 @@ export class Neo4JStore extends Store
         let _record = null;
         let id = req.id;
 
-        let whereStatement = this.whereStatementForId(id);
+        let whereStatement = CypherQueryHelper.whereStatementForId(id);
 
         let cypherQuery = `MATCH (n) ${whereStatement} RETURN n`;
 
@@ -742,14 +492,14 @@ export class Neo4JStore extends Store
 
         let labelString = '';
         let queryString = '';
-        let dataString = ' ' + this.generatePropertiesQueryString(data);
+        let dataString = ' ' + CypherQueryHelper.generatePropertiesQueryString(data);
 
         if ( labels && labels.length ) {
-            labelString = this.generateLabelQueryString(labels);
+            labelString = CypherQueryHelper.generateLabelQueryString(labels);
         }
 
         if ( query && typeof query === 'object' ) {
-            queryString = ' ' + this.generatePropertiesMatchString(query);
+            queryString = ' ' + CypherQueryHelper.generatePropertiesMatchString(query);
         }
 
         let cypherQuery = `MATCH (n${labelString}${queryString}) SET n = ${dataString} RETURN n`;
@@ -800,10 +550,10 @@ export class Neo4JStore extends Store
         let _record = null;
         let id = req.id;
 
-        let startStatement = this.startStatementForId(id);
+        let startStatement = CypherQueryHelper.startStatementForId(id);
 
         let data = req.data || {};
-        let dataString = ' ' + this.generatePropertiesQueryString(data);
+        let dataString = ' ' + CypherQueryHelper.generatePropertiesQueryString(data);
 
         let cypherQuery = `${startStatement} SET n = ${dataString} RETURN n`;
 
@@ -886,14 +636,14 @@ export class Neo4JStore extends Store
                 matches.push(result);
                 return startStatement;
             }
-            startStatement += this.startStatementForId(endPoint.id, queryVar);
+            startStatement += CypherQueryHelper.startStatementForId(endPoint.id, queryVar);
         } else {
             if (Array.isArray(endPoint.labels)) {
-                result += this.generateLabelQueryString(endPoint.labels);
+                result += CypherQueryHelper.generateLabelQueryString(endPoint.labels);
             }
 
             if (Object.keys(endPoint).length > 0) {
-                result += ' ' + this.generatePropertiesMatchString(endPoint.query);
+                result += ' ' + CypherQueryHelper.generatePropertiesMatchString(endPoint.query);
             }
 
             matches.push(result);
@@ -911,7 +661,7 @@ export class Neo4JStore extends Store
         let propertyString = '', fromPoint: string, toPoint: string, labelString = '';
 
         if ( query && typeof query === 'object' ) {
-            propertyString = ' ' + this.generatePropertiesQueryString(query);
+            propertyString = ' ' + CypherQueryHelper.generatePropertiesQueryString(query);
         }
 
         if ( endPoints.fromIsDefined ) {
@@ -931,7 +681,7 @@ export class Neo4JStore extends Store
         }
 
         if ( type && typeof type === 'string' && type.length > 0 ) {
-            labelString = this.generateLabelQueryString([type]);
+            labelString = CypherQueryHelper.generateLabelQueryString([type]);
         }
 
         return `${fromPoint}-[r${labelString}${propertyString}]-${toPoint}`;
@@ -961,7 +711,7 @@ export class Neo4JStore extends Store
                     useWhereForIds);
 
             if ( useWhereForIds && from.id && !IDScheme.validate(from.id).error ) {
-                whereStatement += ' ' +  this.whereStatementForId(from.id, 'n');
+                whereStatement += ' ' +  CypherQueryHelper.whereStatementForId(from.id, 'n');
             }
         } else {
             result.fromIsDefined = false;
@@ -976,13 +726,13 @@ export class Neo4JStore extends Store
                 if ( whereStatement.length > 0 ) {
                     whereStatement += ' AND'
                 }
-                whereStatement += ' ' +  this.whereStatementForId(to.id, 'm');
+                whereStatement += ' ' +  CypherQueryHelper.whereStatementForId(to.id, 'm');
             }
         } else {
             result.toIsDefined = false;
         }
 
-        matchString = this.matchStatement(matches);
+        matchString = CypherQueryHelper.matchStatement(matches);
 
         if (matchString.length) {
             matchString = ' ' + matchString;
@@ -1077,7 +827,7 @@ export class Neo4JStore extends Store
         let query = req.query;
         let data = req.data || {};
 
-        let dataString = ' ' + this.generatePropertiesMatchString(data);
+        let dataString = ' ' + CypherQueryHelper.generatePropertiesMatchString(data);
 
         let endPointQuery = this.createRelatedEndPointsQuery(from, to, anyDirection);
 
@@ -1085,7 +835,7 @@ export class Neo4JStore extends Store
 
         let relationStatement = this.compileMatchStatementForRelation(type, query, endPointQuery);
 
-        let relMatchQuery = this.makeStatementForRelationMatch(matchQuery, relationStatement);
+        let relMatchQuery = CypherQueryHelper.makeStatementForRelationMatch(matchQuery, relationStatement);
 
         let cypherQuery =
             `${relMatchQuery} SET r += ${dataString} RETURN r`;
@@ -1124,10 +874,10 @@ export class Neo4JStore extends Store
         let _record = null;
         let id = req.id;
 
-        let startStatement = this.startStatementForRelId(id);
+        let startStatement = CypherQueryHelper.startStatementForRelId(id);
 
         let data = req.data || {};
-        let dataString = ' ' + this.generatePropertiesQueryString(data);
+        let dataString = ' ' + CypherQueryHelper.generatePropertiesQueryString(data);
 
         let cypherQuery = `${startStatement} SET r += ${dataString} RETURN r`;
 
@@ -1171,7 +921,7 @@ export class Neo4JStore extends Store
         let query = req.query;
         let data = req.data || {};
 
-        let dataString = ' ' + this.generatePropertiesMatchString(data);
+        let dataString = ' ' + CypherQueryHelper.generatePropertiesMatchString(data);
 
         let endPointQuery = this.createRelatedEndPointsQuery(from, to, anyDirection);
 
@@ -1179,7 +929,7 @@ export class Neo4JStore extends Store
 
         let relationStatement = this.compileMatchStatementForRelation(type, query, endPointQuery);
 
-        let relMatchQuery = this.makeStatementForRelationMatch(matchQuery, relationStatement);
+        let relMatchQuery = CypherQueryHelper.makeStatementForRelationMatch(matchQuery, relationStatement);
 
         let cypherQuery =
             `${relMatchQuery} SET r = ${dataString} RETURN r`;
@@ -1218,10 +968,10 @@ export class Neo4JStore extends Store
         let _record = null;
         let id = req.id;
 
-        let startStatement = this.startStatementForRelId(id);
+        let startStatement = CypherQueryHelper.startStatementForRelId(id);
 
         let data = req.data || {};
-        let dataString = ' ' + this.generatePropertiesQueryString(data);
+        let dataString = ' ' + CypherQueryHelper.generatePropertiesQueryString(data);
 
         let cypherQuery = `${startStatement} SET r = ${dataString} RETURN r`;
 
@@ -1270,7 +1020,7 @@ export class Neo4JStore extends Store
 
         let relationStatement = this.compileMatchStatementForRelation(type, query, endPointQuery);
 
-        let relMatchQuery = this.makeStatementForRelationMatch(matchQuery, relationStatement);
+        let relMatchQuery = CypherQueryHelper.makeStatementForRelationMatch(matchQuery, relationStatement);
 
         let cypherQuery =
             `${relMatchQuery} DELETE r RETURN COUNT(r) as count`;
@@ -1311,7 +1061,7 @@ export class Neo4JStore extends Store
         let _record = null;
         let id = req.id;
 
-        let startStatement = this.startStatementForRelId(id);
+        let startStatement = CypherQueryHelper.startStatementForRelId(id);
 
         let cypherQuery = `${startStatement} DELETE r RETURN COUNT(r) as count`;
 
@@ -1372,10 +1122,10 @@ export class Neo4JStore extends Store
         let relationStatement = this.compileMatchStatementForRelation(type, query, endPointQuery);
 
         if ( options ) {
-            optionsString = this.generateOptionsString(options, 'r');
+            optionsString = CypherQueryHelper.generateOptionsString(options, 'r');
         }
 
-        let relMatchQuery = this.makeStatementForRelationMatch(matchQuery, relationStatement);
+        let relMatchQuery = CypherQueryHelper.makeStatementForRelationMatch(matchQuery, relationStatement);
 
         let cypherQuery =
             `${relMatchQuery} RETURN DISTINCT r${optionsString}`;
@@ -1434,11 +1184,11 @@ export class Neo4JStore extends Store
         let relationStatement = this.compileMatchStatementForRelation(type, query, endPointQuery);
 
         if ( options ) {
-            optionsString = this.generateOptionsString(options, 'n');
+            optionsString = CypherQueryHelper.generateOptionsString(options, 'n');
         }
 
         let relMatchQuery =
-            this.makeStatementForRelationMatch(matchQuery, relationStatement, false);
+            CypherQueryHelper.makeStatementForRelationMatch(matchQuery, relationStatement, false);
 
         relMatchQuery = relMatchQuery.replace('(n), ', '');
 
@@ -1500,11 +1250,11 @@ export class Neo4JStore extends Store
         let relationStatement = this.compileMatchStatementForRelation(type, query, endPointQuery);
 
         if ( options ) {
-            optionsString = this.generateOptionsString(options, 'm');
+            optionsString = CypherQueryHelper.generateOptionsString(options, 'm');
         }
 
         let relMatchQuery =
-            this.makeStatementForRelationMatch(matchQuery, relationStatement, false);
+            CypherQueryHelper.makeStatementForRelationMatch(matchQuery, relationStatement, false);
 
         relMatchQuery = relMatchQuery.replace('(m), ', '');
 
@@ -1565,11 +1315,11 @@ export class Neo4JStore extends Store
         let relationStatement = this.compileMatchStatementForRelation(type, query, endPointQuery);
 
         if ( options ) {
-            optionsString = this.generateOptionsString(options, 'n');
+            optionsString = CypherQueryHelper.generateOptionsString(options, 'n');
         }
 
         let relMatchQuery =
-            this.makeStatementForRelationMatch(matchQuery, relationStatement, false);
+            CypherQueryHelper.makeStatementForRelationMatch(matchQuery, relationStatement, false);
 
         relMatchQuery = relMatchQuery.replace('(n), (m), ', '');
         relMatchQuery = relMatchQuery.replace('(n), ', '');
@@ -1611,7 +1361,7 @@ export class Neo4JStore extends Store
         let _record = null;
         let id = req.id;
 
-        let whereStatement = this.whereStatementForId(id, 'r');
+        let whereStatement = CypherQueryHelper.whereStatementForId(id, 'r');
 
         let cypherQuery = `MATCH ()-[r]-() ${whereStatement} RETURN DISTINCT r`;
 

@@ -20,16 +20,6 @@ export interface IListOptionsRule {
 export declare class Neo4JStore extends Store {
     _session: Neo4JLib.v1.Session;
     constructor(driver: any);
-    protected startStatementForId(id: any, queryVar?: string): string;
-    protected startStatementForRelId(id: any, queryVar?: string): string;
-    protected whereStatementForId(id: any, queryVar?: string): string;
-    protected matchStatement(matches: string[], queryVars?: string[]): string;
-    protected generateLabelQueryString(labels: string[]): string;
-    protected generatePropertiesQueryString(data: Object): string;
-    protected generatePropertiesMatchString(data: Object): string;
-    protected generateSortString(sortData: string | string[] | ISortRule | ISortRule[], queryVar?: string, addSortCmd?: boolean): string;
-    protected generateOptionsString(options: IListOptionsRule, queryVar?: string): string;
-    protected makeStatementForRelationMatch(matchQuery: string, relationStatement: string, optionalMatch?: boolean): string;
     protected parseResultObject(object: INeo4JNodeResponse): Neo4JNodeModel;
     protected parseResultArray(array: INeo4JNodeResponse[]): Neo4JNodeModel[];
     protected parseRelationResultObject(object: INeo4JNodeResponse): Neo4JRelationModel;
