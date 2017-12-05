@@ -3,37 +3,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const Neo4JLib = require("neo4j-driver");
 const Neo4J = Neo4JLib.v1;
 const Store = require("hemera-store");
-const model_1 = require("./model");
-const integer = require("neo4j-driver/lib/v1/integer");
 const Joi = require("joi");
 const pattern_1 = require("./pattern");
 const query_helper_1 = require("./query-helper");
+const result_parser_1 = require("./result-parser");
 class Neo4JStore extends Store {
     constructor(driver) {
         super(driver, {});
         this._session = null;
-    }
-    parseResultObject(object) {
-        return new model_1.Neo4JNodeModel(object);
-    }
-    parseResultArray(array) {
-        if (!Array.isArray(array)) {
-            return array;
-        }
-        return array.map(item => {
-            return this.parseResultObject(item);
-        });
-    }
-    parseRelationResultObject(object) {
-        return new model_1.Neo4JRelationModel(object);
-    }
-    parseRelationResultArray(array) {
-        if (!Array.isArray(array)) {
-            return array;
-        }
-        return array.map(item => {
-            return this.parseRelationResultObject(item);
-        });
     }
     get session() {
         if (this._session) {
@@ -62,7 +39,7 @@ class Neo4JStore extends Store {
                 if (!_record) {
                     return cb(null, _record);
                 }
-                let item = this.parseResultObject(_record.n || {});
+                let item = result_parser_1.Neo4jResultParser.parseResultObject(_record.n || {});
                 cb(null, item);
             },
             onError: (error) => {
@@ -157,7 +134,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseResultArray(_records || []);
                 switch (items.length) {
                     case 0:
                         items = null;
@@ -192,7 +169,7 @@ class Neo4JStore extends Store {
                 if (!_record) {
                     return cb(null, _record);
                 }
-                let item = this.parseResultObject(_record.n || {});
+                let item = result_parser_1.Neo4jResultParser.parseResultObject(_record.n || {});
                 cb(null, item);
             },
             onError: (error) => {
@@ -232,7 +209,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseResultArray(_records || []);
                 cb(null, items);
             },
             onError: (error) => {
@@ -255,7 +232,7 @@ class Neo4JStore extends Store {
                 if (!_record) {
                     return cb(null, _record);
                 }
-                let item = this.parseResultObject(_record.n || {});
+                let item = result_parser_1.Neo4jResultParser.parseResultObject(_record.n || {});
                 cb(null, item);
             },
             onError: (error) => {
@@ -288,7 +265,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseResultArray(_records || []);
                 switch (items.length) {
                     case 0:
                         items = null;
@@ -323,7 +300,7 @@ class Neo4JStore extends Store {
                 if (!_record) {
                     return cb(null, _record);
                 }
-                let item = this.parseResultObject(_record.n || {});
+                let item = result_parser_1.Neo4jResultParser.parseResultObject(_record.n || {});
                 cb(null, item);
             },
             onError: (error) => {
@@ -474,7 +451,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseRelationResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseRelationResultArray(_records || []);
                 cb(null, items);
             },
             onError: (error) => {
@@ -506,7 +483,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseRelationResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseRelationResultArray(_records || []);
                 cb(null, items);
             },
             onError: (error) => {
@@ -531,7 +508,7 @@ class Neo4JStore extends Store {
                 if (!_record) {
                     return cb(null, _record);
                 }
-                let item = this.parseRelationResultObject(_record.r || {});
+                let item = result_parser_1.Neo4jResultParser.parseRelationResultObject(_record.r || {});
                 cb(null, item);
             },
             onError: (error) => {
@@ -563,7 +540,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseRelationResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseRelationResultArray(_records || []);
                 cb(null, items);
             },
             onError: (error) => {
@@ -588,7 +565,7 @@ class Neo4JStore extends Store {
                 if (!_record) {
                     return cb(null, _record);
                 }
-                let item = this.parseRelationResultObject(_record.r || {});
+                let item = result_parser_1.Neo4jResultParser.parseRelationResultObject(_record.r || {});
                 cb(null, item);
             },
             onError: (error) => {
@@ -680,7 +657,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseRelationResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseRelationResultArray(_records || []);
                 cb(null, items);
             },
             onError: (error) => {
@@ -718,7 +695,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseResultArray(_records || []);
                 cb(null, items);
             },
             onError: (error) => {
@@ -756,7 +733,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseResultArray(_records || []);
                 cb(null, items);
             },
             onError: (error) => {
@@ -795,7 +772,7 @@ class Neo4JStore extends Store {
             onCompleted: () => {
                 this.session.close();
                 this._session = null;
-                let items = this.parseResultArray(_records || []);
+                let items = result_parser_1.Neo4jResultParser.parseResultArray(_records || []);
                 cb(null, items);
             },
             onError: (error) => {
@@ -818,7 +795,7 @@ class Neo4JStore extends Store {
                 if (!_record) {
                     return cb(null, _record);
                 }
-                let item = this.parseRelationResultObject(_record.r || {});
+                let item = result_parser_1.Neo4jResultParser.parseRelationResultObject(_record.r || {});
                 cb(null, item);
             },
             onError: (error) => {

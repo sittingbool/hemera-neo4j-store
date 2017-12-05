@@ -1,6 +1,5 @@
 import * as Neo4JLib from "neo4j-driver";
 import Store = require("hemera-store");
-import { Neo4JNodeModel, INeo4JNodeResponse, Neo4JRelationModel } from "./model";
 export interface IRelatedEndPointsQuery {
     queryString: string;
     fromIsDefined: boolean;
@@ -20,10 +19,6 @@ export interface IListOptionsRule {
 export declare class Neo4JStore extends Store {
     _session: Neo4JLib.v1.Session;
     constructor(driver: any);
-    protected parseResultObject(object: INeo4JNodeResponse): Neo4JNodeModel;
-    protected parseResultArray(array: INeo4JNodeResponse[]): Neo4JNodeModel[];
-    protected parseRelationResultObject(object: INeo4JNodeResponse): Neo4JRelationModel;
-    protected parseRelationResultArray(array: INeo4JNodeResponse[]): Neo4JRelationModel[];
     readonly session: Neo4JLib.v1.Session;
     create(req: any, cb: any): void;
     remove(req: any, cb: any): void;
