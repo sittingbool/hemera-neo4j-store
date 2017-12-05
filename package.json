@@ -1,6 +1,6 @@
 {
   "name": "hemera-neo4j-store",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "A hemera store for the neo4j database",
   "main": "index.js",
   "scripts": {
@@ -26,7 +26,8 @@
   "dependencies": {
     "hemera-plugin": "0.0.17",
     "hemera-store": "^1.1.14",
-    "joi": "^13.0.2"
+    "joi": "^13.0.2",
+    "neo4j-driver": "^1.5.1"
   },
   "devDependencies": {
     "@types/code": "^4.0.3",
@@ -39,7 +40,6 @@
     "mocha-typescript": "^1.1.12",
     "nats": "^0.7.24",
     "nats-hemera": "^2.4.3",
-    "neo4j-driver": "^1.5.1",
     "should": "^13.1.3"
   }
 }
